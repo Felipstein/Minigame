@@ -3,9 +3,10 @@ package net.stardust.minigames;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.HashSet;
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import org.apache.commons.lang3.Validate;
 import org.bukkit.World;
@@ -16,17 +17,18 @@ import net.stardust.minigames.twb.NotAMapFolderException;
 
 public abstract class Minigame implements Serializable {
 	
+	public static final int PORT = 10147;
 	protected transient static final String mapsDir = "";
 	protected transient static final int DELAY = 20;
 	protected transient static final int PERIOD = 20;
 	protected transient static final float PROPORTION = 0.75f;
 	private static final long serialVersionUID = 4763429008896321664L;
 	private transient static Random random = new Random();
-	protected final BukkitRunnable preMatchTimer;
 	protected BukkitRunnable matchTimer;
-	protected Set<String> winners;
+	protected Map<String, BigDecimal> winners;
 	protected int secondsToStart = 60;
 	protected boolean matchRunning;
+	private final BukkitRunnable preMatchTimer;
 	private JavaPlugin plugin;
 	private World world;
 	private String name;
@@ -68,13 +70,14 @@ public abstract class Minigame implements Serializable {
 		this.idAmount = idAmount;
 		this.plugin = plugin;
 		mapFolder = new File(mapsDir + "\\" + name);
-		winners = new HashSet<>();
+		if(mapFolder.isFile()) {
+			throw new NotAMapFolderException("O arquivo dado não parece ser uma pasta.");
+		}
 		matchTimer = getMatchTimer();
 		if(!mapFolder.exists()) {
 			try {
 				mapFolder.createNewFile();
 			} catch(IOException e) {
-				this.name = null;
 				mapFolder = null;
 				this.maxPlayers = 0;
 				this.idAmount = 0;
@@ -84,10 +87,26 @@ public abstract class Minigame implements Serializable {
 		}
 	}
 	
+	protected final void tryPreMatch() {
+		if(matchStartable) {
+			preMatchTimer.runTaskTimer(plugin, DELAY, PERIOD);
+		} else {
+			die();
+		}
+	}
+	
+	protected final void die() {
+		
+	}
+	
 	protected final File drawMap() {
 		try {
 			File[] maps = mapFolder.listFiles();
 			File map = maps[random.nextInt(maps.length)];
+			if(map.isFile()) {
+				throw new NotAMapFolderException("A pasta de mapas contém um arquivo que não é uma pasta de "
+						+ "mapa: " + map.getAbsolutePath());
+			}
 			File[] internalFiles = map.listFiles();
 			boolean uidDatPresent = false;
 			for(File internal : internalFiles) {
@@ -104,13 +123,19 @@ public abstract class Minigame implements Serializable {
 		} catch(NullPointerException e) {
 			return null;
 		} catch(IllegalArgumentException e) {
-			throw new NotAMapFolderException("A pasta de mapas não contém nenhum mapa válido.");
+			throw new NotAMapFolderException("A pasta de mapas não contém mapa algum.");
 		}
 	}
 	
 	protected abstract BukkitRunnable getMatchTimer();
 	
+	protected abstract void setWinnersMap();
+	
 	public abstract void communicate();
+	
+	public Map<String, BigDecimal> getWinnersMap() {
+		return winners == null ? new LinkedHashMap<>() : winners;
+	}
 	
 	public String getName() {
 		return name;
