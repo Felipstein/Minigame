@@ -2,6 +2,8 @@ package net.stardust.minigames;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.net.Socket;
@@ -10,6 +12,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.apache.commons.lang3.Validate;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -100,6 +103,15 @@ public abstract class Minigame implements Serializable {
 	protected final void die() {
 		try {
 			Socket socket = new Socket(SERVER, PORT);
+			ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+			ObjectInputStream input = new ObjectInputStream(socket.getInputStream());
+			output.writeObject(this);
+			boolean status = input.readBoolean();
+			if(status) {
+				Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "stop");
+			} else {
+				System.exit(-1);
+			}
 		} catch(IOException e) {
 			
 		}
