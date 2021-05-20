@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.net.Socket;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -17,6 +18,7 @@ import net.stardust.minigames.twb.NotAMapFolderException;
 
 public abstract class Minigame implements Serializable {
 	
+	public static final String SERVER = "localhost";
 	public static final int PORT = 10147;
 	protected transient static final String mapsDir = "";
 	protected transient static final int DELAY = 20;
@@ -59,7 +61,7 @@ public abstract class Minigame implements Serializable {
 		};
 	}
 	
-	public Minigame(JavaPlugin plugin, String name, int maxPlayers, int idAmount) {
+	protected Minigame(JavaPlugin plugin, String name, int maxPlayers, int idAmount) {
 		Validate.notNull(name);
 		Validate.notNull(plugin);
 		if(maxPlayers < 2 || idAmount < 2) {
@@ -96,7 +98,11 @@ public abstract class Minigame implements Serializable {
 	}
 	
 	protected final void die() {
-		
+		try {
+			Socket socket = new Socket(SERVER, PORT);
+		} catch(IOException e) {
+			
+		}
 	}
 	
 	protected final File drawMap() {
